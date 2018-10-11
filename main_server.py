@@ -15,7 +15,7 @@ except socket.error as e:
 def threaded_client(conn):
     conn.send(str.encode('[SEVER]Welcome, send your data\n'))
     while True:
-        data = conn.recv(2048)
+        data = conn.recv(1048576)
         reply = '[SERVER]Server output: ' + data.decode('utf-8')
         if not data:
             break
@@ -28,10 +28,16 @@ print('[SERVER]Waiting for a connection...')
 
 def main():
     conn, addr = tpc_socket.accept()
-    data = conn.recv(2048)
-    print('[SERVER]New data from {}:{}'.format(addr[0],addr[1]))
+    try:
+        data = conn.recv(1048576)
+    except socket.error:
+        data =b'!ERROR! Too much size for us'
+    print('[SERVER]New data from {}:{}'.format(addr[0], addr[1]))
     print('[SERVER]Recv:{}'.format(data.decode('utf-8')))
-    start_new_thread(threaded_client, (conn,))
+    try:
+        start_new_thread(threaded_client, (conn,))
+    except ConnectionResetError:
+        pass
     #conn.send(data)
 
 while True:
