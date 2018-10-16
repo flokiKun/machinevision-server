@@ -45,7 +45,7 @@ def main():
     print('[SERVER]New data from {}:{}'.format(addr[0], addr[1]))
     print('[SERVER]Recv:{}'.format('JSON'))
 
-    #requset = json.load(data)
+    requset = json.loads(data)['requestCode']
     print('[SERVER]JSON:{}'.format(requset))
     #dwn_web_img(data.decode('utf-8'))
     try:
@@ -60,3 +60,4 @@ def main():
 
 while True:
     main()
+
