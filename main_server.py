@@ -14,8 +14,11 @@ def dwn_web_img(request, count_urls):
     response.download(arguments)
 
 
+print('=============================')
 print('Machine Vision Server ALPHA')
 print('Copyright JP Tech.')
+print('=============================')
+
 
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = '192.168.43.103'
