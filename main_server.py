@@ -1,15 +1,15 @@
 import socket
 import random
 import json
-#from google_images_download import google_images_download
+from google_images_download import google_images_download
 import urllib.request
 from _thread import *
 import sys
 
-#def dwn_web_img(request):
-#    response = google_images_download.googleimagesdownload()
-#    arguments = {"keywords": str(request), "limit": 5, "print_urls": False,'no_numbering':True,'prefix':str(request)}
-#    response.download(arguments)
+def dwn_web_img(request,count_urls):
+    response = google_images_download.googleimagesdownload()
+    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False,"offset":random.randrange(1,100),"extract_metadata":True}
+    response.download(arguments)
 
 tpc_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 host = '192.168.43.103'
@@ -39,19 +39,28 @@ def main():
     try:
         data = conn.recv(1048576)
         data = data.decode('utf-8')
+        if data is not None:
+            recvdata = json.loads(data)
+        else:
+            recvdata=[]
         print(data)
     except socket.error:
-        data =b'!ERROR! Too much size for us'
+        print('!ERROR! Too much size for us')
+        recvdata={}
     print('[SERVER]New data from {}:{}'.format(addr[0], addr[1]))
-    print('[SERVER]Recv:{}'.format('JSON'))
 
-    requset = json.loads(data)['requestCode']
-    print('[SERVER]JSON:{}'.format(requset))
-    #dwn_web_img(data.decode('utf-8'))
-    try:
-        conn.send(b'[SERVER]Img was download to server!')
-    except socket.error:
-        pass
+    request = recvdata['request_code']
+    print('[SERVER]Rev  :{}'.format(request))
+
+    if request=='regimg':
+        dwn_web_img(recvdata['query'],recvdata['rtcount'])
+        meta_json=open('logs/{}.json'.format(recvdata['query']),'r')
+        answer = '{ \"answer_code\": \"query_metadata\", \"metadata\":' +str(meta_json)+'}'
+        conn.send(bytes(answer,'utf-8'))
+        meta_json.close()
+    else:
+        conn.send(b'ERROR wrong request_code')
+
     #try:
     #    start_new_thread(threaded_client, (conn,))
     #except ConnectionResetError:
@@ -60,4 +69,3 @@ def main():
 
 while True:
     main()
-
