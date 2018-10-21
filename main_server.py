@@ -9,25 +9,24 @@ import sys
 
 def dwn_web_img(request, count_urls):
     response = google_images_download.googleimagesdownload()
-    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset": random.randrange(1, 100),
-                 "extract_metadata": True}
+    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset": random.randrange(1, 100),"extract_metadata": True}
     response.download(arguments)
 
 
 print('=============================')
 print('Machine Vision Server ALPHA')
-print('Copyright JP Tech.')
+print('Copyright JaPy Tech.')
 print('=============================')
 
 
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.43.103'
-port = 1337
+host = 'localhost'
+port = 1338
 
 try:
     tpc_socket.bind((host, port))
 except socket.error as e:
-    print(str(e))
+    print('[SERVER] ERROR: ' + str(e))
 
 
 def threaded_client(conn):
@@ -41,37 +40,44 @@ def threaded_client(conn):
     conn.close()
 
 
-tpc_socket.listen(5)
+tpc_socket.listen(10)
 
-print('[SERVER]Waiting for a connection...')
+print('[SERVER] Waiting for a connection...')
 
 
-def main():
+def main_loop():
     conn, addr = tpc_socket.accept()
     try:
         data = conn.recv(1048576)
         data = data.decode('utf-8')
+        print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
         if data is not None:
-            recvdata = json.loads(data)
+            try:
+                recvdata = json.loads(data)
+            except:
+                recvdata = {'reqimg':None,'query':None,'rtcount':None}
+                print('[SERVER]Recv data is not JSON!')
         else:
             recvdata = []
-        print(data)
     except socket.error:
         print('!ERROR! Too much size for us')
         recvdata = {}
-    print('[SERVER]New data from {}:{}'.format(addr[0], addr[1]))
-
-    request = recvdata['request_code']
-    print('[SERVER]Rev  :{}'.format(request))
+    try:
+        request = recvdata['request_code']
+        print('[SERVER] Request :{}'.format(request))
+    except KeyError:
+        request = ''
+        print('[SERVER]Wrong request code')
 
     if request == 'regimg':
+        print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
         dwn_web_img(recvdata['query'], recvdata['rtcount'])
-        meta_json = open('logs/{}.json'.format(recvdata['query']), 'r')
+        meta_json = json.loads(open('logs/{}.json'.format(recvdata['query'])).read())
         answer = '{ \"answer_code\": \"query_metadata\", \"metadata\":' + str(meta_json) + '}'
+        print('[SERVER] Sending metadata:\n\t{}'.format(str(meta_json)))
         conn.send(bytes(answer, 'utf-8'))
-        meta_json.close()
-    else:
-        conn.send(b'ERROR wrong request_code')
+    # else:
+        # conn.send(b'ERROR wrong request_code')
 
     # try:
     #    start_new_thread(threaded_client, (conn,))
@@ -81,4 +87,4 @@ def main():
 
 
 while True:
-    main()
+    main_loop()
