@@ -21,7 +21,7 @@ print('=============================')
 
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = 'localhost'
-port = 1338
+port = 1337
 
 try:
     tpc_socket.bind((host, port))
