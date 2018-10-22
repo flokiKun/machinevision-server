@@ -2,6 +2,7 @@ import socket
 import random
 import json
 from google_images_download import google_images_download
+import time
 import urllib.request
 from _thread import *
 import sys
@@ -9,7 +10,7 @@ import sys
 
 def dwn_web_img(request, count_urls):
     response = google_images_download.googleimagesdownload()
-    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset": random.randrange(1, 100),"extract_metadata": True}
+    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset":1,"extract_metadata": True}
     response.download(arguments)
 
 
@@ -20,7 +21,7 @@ print('=============================')
 
 
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = 'localhost'
+host = '192.168.43.103'
 port = 1337
 
 try:
@@ -64,12 +65,16 @@ def main_loop():
         recvdata = {}
     try:
         request = recvdata['request_code']
-        print('[SERVER] Request :{}'.format(request))
+        print('[SERVER] Request: {}'.format(request))
+        pass
     except KeyError:
         request = ''
-        print('[SERVER]Wrong request code')
+        print('[SERVER]Wrong request type')
+        pass
 
-    if request == 'regimg':
+    if request == 'reqimg':
+        print('Waiting....')
+        time.sleep(5)
         print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
         dwn_web_img(recvdata['query'], recvdata['rtcount'])
         meta_json = json.loads(open('logs/{}.json'.format(recvdata['query'])).read())
