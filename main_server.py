@@ -1,11 +1,7 @@
-import socket
-import random
 import json
+import socket
+
 from google_images_download import google_images_download
-import time
-import urllib.request
-from _thread import *
-import sys
 
 
 def dwn_web_img(request, count_urls):
@@ -74,13 +70,19 @@ def main_loop():
 
     if request == 'reqimg':
         print('Waiting....')
-        time.sleep(5)
+        #time.sleep(5)
         print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
         dwn_web_img(recvdata['query'], recvdata['rtcount'])
-        meta_json = json.loads(open('logs/{}.json'.format(recvdata['query'])).read())
-        answer = '{ \"answer_code\": \"query_metadata\", \"metadata\":' + str(meta_json) + '}'
-        print('[SERVER] Sending metadata:\n\t{}'.format(str(meta_json)))
-        conn.send(bytes(answer, 'utf-8'))
+        with open('logs/{}.json'.format(recvdata['query'])) as f:
+            meta_json = json.loads(f.read())
+        response = {
+            "answer_code": "query_metadata",
+            "metadata": meta_json
+        }
+        response = json.dumps(response)
+        print('[SERVER] Sending:\n\t{}'.format(response))
+        conn.send(bytes(response, 'utf-8'))
+        print('[SERVER] Success')
     # else:
         # conn.send(b'ERROR wrong request_code')
 
