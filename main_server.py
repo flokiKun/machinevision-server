@@ -4,9 +4,9 @@ import socket
 from google_images_download import google_images_download
 
 
-def dwn_web_img(request, count_urls):
+def dwn_web_img(request, count_urls,offset):
     response = google_images_download.googleimagesdownload()
-    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset":1,"extract_metadata": True}
+    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset":offset,"extract_metadata": True}
     response.download(arguments)
 
 
@@ -17,7 +17,7 @@ print('=============================')
 
 
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.43.103'
+host = '192.168.43.109' #192.168.43.103
 port = 1337
 
 try:
@@ -52,7 +52,7 @@ def main_loop():
             try:
                 recvdata = json.loads(data)
             except:
-                recvdata = {'reqimg':None,'query':None,'rtcount':None}
+                recvdata = {'reqimg':None,'query':None,'rtcount':None,'offset':None}
                 print('[SERVER]Recv data is not JSON!')
         else:
             recvdata = []
@@ -71,8 +71,12 @@ def main_loop():
     if request == 'reqimg':
         print('Waiting....')
         #time.sleep(5)
+        try:
+            offset=int(recvdata['offset'])
+        except KeyError:
+            offset = 0
         print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
-        dwn_web_img(recvdata['query'], recvdata['rtcount'])
+        dwn_web_img(recvdata['query'], int(recvdata['rtcount'])+offset-1,offset=offset)
         with open('logs/{}.json'.format(recvdata['query'])) as f:
             meta_json = json.loads(f.read())
         response = {
