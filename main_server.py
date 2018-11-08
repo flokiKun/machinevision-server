@@ -74,7 +74,7 @@ def main_loop():
         try:
             offset=int(recvdata['offset'])
         except KeyError:
-            offset = 0
+            offset = 1
         print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
         dwn_web_img(recvdata['query'], int(recvdata['rtcount'])+offset-1,offset=offset)
         with open('logs/{}.json'.format(recvdata['query'])) as f:
