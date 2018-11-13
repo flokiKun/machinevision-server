@@ -1,7 +1,33 @@
 import json
 import socket
-
+import pathlib
+import os
+import threading as thread
+#import cv2 as cv
 from google_images_download import google_images_download
+
+class Obj():
+    def __init__(self,name,info_data):
+        self.info_data = info_data
+        self.name = str(name)
+
+    def save(self,dir):
+        if not pathlib.Path('{}'.format(dir)).exists():
+            os.makedirs(str(dir))
+        with open('{}/{}.json'.format(dir,self.name),'w+') as outfile:
+            json.dump(self.info_data,outfile)
+            pass
+
+# class Potok(thread.Thread):
+#
+#     def __init__(self, name,func):
+#         thread.Thread.__init__(self)
+#         self.name = name
+#         self.func = func
+#         func()
+#
+#     def run(self):
+#         print('Bla')
 
 
 def dwn_web_img(request, count_urls,offset):
@@ -13,12 +39,15 @@ def dwn_web_img(request, count_urls,offset):
 print('=============================')
 print('Machine Vision Server ALPHA')
 print('Copyright JaPy Tech.')
+#print('Use OpenCV:{}'.format(cv.__version__))
 print('=============================')
 
-
+threads_max = 5
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.43.109' #192.168.43.103
+
+host = '192.168.43.109' #192.168.43.109
 port = 1337
+
 
 try:
     tpc_socket.bind((host, port))
@@ -26,38 +55,24 @@ except socket.error as e:
     print('[SERVER] ERROR: ' + str(e))
 
 
-def threaded_client(conn):
-    conn.send(str.encode('[SEVER]Welcome, send your data\n'))
-    while True:
-        data = conn.recv(1048576)
-        reply = '[SERVER]Server output: ' + data.decode('utf-8')
-        if not data:
-            break
-        conn.sendall(str.encode(reply))
-    conn.close()
-
-
 tpc_socket.listen(10)
 
 print('[SERVER] Waiting for a connection...')
-
-
 def main_loop():
     conn, addr = tpc_socket.accept()
     try:
         data = conn.recv(1048576)
         data = data.decode('utf-8')
-        print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
+        # print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
         if data is not None:
             try:
                 recvdata = json.loads(data)
             except:
                 recvdata = {'reqimg':None,'query':None,'rtcount':None,'offset':None}
-                print('[SERVER]Recv data is not JSON!')
         else:
             recvdata = []
-    except socket.error:
-        print('!ERROR! Too much size for us')
+    except socket.error as e:
+        print('!ERROR! {}'.format(str(e)))
         recvdata = {}
     try:
         request = recvdata['request_code']
@@ -65,7 +80,6 @@ def main_loop():
         pass
     except KeyError:
         request = ''
-        print('[SERVER]Wrong request type')
         pass
 
     if request == 'reqimg':
@@ -87,6 +101,27 @@ def main_loop():
         print('[SERVER] Sending:\n\t{}'.format(response))
         conn.send(bytes(response, 'utf-8'))
         print('[SERVER] Success')
+
+    elif request == 'new_object':
+        new_obj = Obj(name=recvdata['artifact_object']['id'],info_data=recvdata['artifact_object'])
+        new_obj.save('artifact_objects')
+        conn.send(b'success')
+
+    elif request == 'list_objects':
+        obj_list=[]
+        if not pathlib.Path('artifact_objects').exists():
+            print('[SERVER]no such dir')
+        else:
+            for filename in os.listdir('artifact_objects/'):
+                #obj_list.append(filename)
+                with open('artifact_objects/{}'.format(filename),'r') as file_json:
+                    obj_list.append(json.load(file_json))
+                    file_json.close()
+        response = {
+            'answer_code': 'list_objects',
+            'objects': obj_list
+        }
+        conn.send(bytes(json.dumps(response),'utf-8'))
     # else:
         # conn.send(b'ERROR wrong request_code')
 
