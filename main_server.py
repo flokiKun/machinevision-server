@@ -32,22 +32,31 @@ class Obj():
 
 def dwn_web_img(request, count_urls,offset):
     response = google_images_download.googleimagesdownload()
-    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset":offset,"extract_metadata": True}
+    arguments = {"keywords": str(request), "limit": count_urls, "print_urls": False, "offset":offset,'no_download':True,"extract_metadata": True,'chromedriver':'/usr/lib/chromium-browser/chromedriver'}
     response.download(arguments)
 
+def get_my_ipv4():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 80))
+    res = s.getsockname()[0]
+    s.close()
+    return res
+
+# CONST
+
+
+host = get_my_ipv4()
+port = 1337
 
 print('=============================')
 print('Machine Vision Server ALPHA')
 print('Copyright JaPy Tech.')
-#print('Use OpenCV:{}'.format(cv.__version__))
+# print('Use OpenCV:{}'.format(cv.__version__))
+print('Running on {}:{}'.format(host,port))
 print('=============================')
 
 threads_max = 5
 tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-host = '192.168.43.109' #192.168.43.109
-port = 1337
-
 
 try:
     tpc_socket.bind((host, port))
@@ -58,17 +67,20 @@ except socket.error as e:
 tpc_socket.listen(10)
 
 print('[SERVER] Waiting for a connection...')
+
+
 def main_loop():
     conn, addr = tpc_socket.accept()
     try:
         data = conn.recv(1048576)
         data = data.decode('utf-8')
-        # print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
+        if data != '':
+            print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
         if data is not None:
             try:
                 recvdata = json.loads(data)
             except:
-                recvdata = {'reqimg':None,'query':None,'rtcount':None,'offset':None}
+                recvdata = {'reqimg': None, 'query': None, 'rtcount': None, 'offset': None}
         else:
             recvdata = []
     except socket.error as e:
@@ -94,7 +106,7 @@ def main_loop():
         with open('logs/{}.json'.format(recvdata['query'])) as f:
             meta_json = json.loads(f.read())
         response = {
-            "answer_code": "query_metadata",
+            "response_code": "query_metadata",
             "metadata": meta_json
         }
         response = json.dumps(response)
@@ -122,6 +134,12 @@ def main_loop():
             'objects': obj_list
         }
         conn.send(bytes(json.dumps(response),'utf-8'))
+    elif request == 'delete_object':
+        try:
+            os.remove('artifact_objects/{}.json'.format(recvdata['id']))
+        except:
+            pass
+
     # else:
         # conn.send(b'ERROR wrong request_code')
 
@@ -130,7 +148,6 @@ def main_loop():
     # except ConnectionResetError:
     #    pass
     # conn.send(data)
-
 
 while True:
     main_loop()
