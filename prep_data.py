@@ -4,6 +4,8 @@ from dicttoxml import dicttoxml
 from xml.dom.minidom import parseString
 import numpy
 import cv2
+import urllib
+import json
 
 
 # File , that preper dir to ma
@@ -29,6 +31,15 @@ class Prep_Class():
             os.makedirs(self.rootdir + '/prep_data/{}/models/model'.format(self.object_name))
             os.makedirs(self.rootdir + '/prep_data/{}/models/model/train'.format(self.object_name))
             os.makedirs(self.rootdir + '/prep_data/{}/models/model/eval'.format(self.object_name))
+
+
+    def img_from_link(self,mode):
+        if mode == 'separate':
+            with open(self.rootdir + '/logs/{}'.format(self.object_name+'.json')) as f:
+                json_f = json.load(f)
+                for i in range(0, len(json_f)):
+                    print(json_f[i]['image_link'])
+
 
     def gen_xml_for_img(self, img_info, folder):
         img = img_info[0]
@@ -69,8 +80,9 @@ class Prep_Class():
         # cv2.destroyAllWindows()
 
 
-info = ([],'anime',1,'anime-chan')
+# info = ([],'anime',1,'anime-chan')
 dirs = Prep_Class('knife')
 dirs.init_dirs()
-#dirs.gen_xml_for_img(info,'eval')
-dirs.making_xmls('train')
+# dirs.gen_xml_for_img(info,'eval')
+# dirs.making_xmls('train')
+dirs.img_from_link('separate')
