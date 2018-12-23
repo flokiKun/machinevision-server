@@ -100,9 +100,9 @@ def main_loop():
         try:
             offset=int(recvdata['offset'])
         except KeyError:
-            offset = 1
+            offset = 0
         print('\tquery:{}\trtcount:{}'.format(recvdata['query'], recvdata['rtcount']))
-        dwn_web_img(recvdata['query'], int(recvdata['rtcount'])+offset-1,offset=offset)
+        dwn_web_img(recvdata['query'], int(recvdata['rtcount'])+offset,offset+1)
         with open('logs/{}.json'.format(recvdata['query'])) as f:
             meta_json = json.loads(f.read())
         response = {
