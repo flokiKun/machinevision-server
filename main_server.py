@@ -6,6 +6,7 @@ import platform
 import threading as thread
 # import cv2 as cv
 from google_images_download import google_images_download
+from prep_data import Prep_Class
 
 
 class Obj():
@@ -20,6 +21,14 @@ class Obj():
             json.dump(self.info_data, outfile)
             pass
 
+def readNparseObject(id):
+    if not pathlib.Path('artifact_objects').exists():
+        return """No atrifact_objects dir , can't read Object """
+    if not pathlib.Path('artifact_objects/{id}.json'.format(id=id)).exists():
+        return """No such file , can't read Object """
+    with open('artifact_objects/{id}.json'.format(id=id)) as f:
+        object_Data = json.loads(f.read())
+    return object_Data
 
 # class Potok(thread.Thread):
 #
@@ -68,23 +77,30 @@ print('Running on {}:{}'.format(host, port))
 print('=============================')
 
 threads_max = 5
-tpc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
-    tpc_socket.bind((host, port))
+    tcp_socket.bind((host, port))
 except socket.error as e:
     print('[SERVER] ERROR: ' + str(e))
 
-tpc_socket.listen(10)
+tcp_socket.listen(10)
 
 print('[SERVER] Waiting for a connection...')
 
 
 def main_loop():
-    conn, addr = tpc_socket.accept()
+    #TODO : Make all of thus in class (Low Priority)
+    conn, addr = tcp_socket.accept()
     try:
-        data = conn.recv(1048576)
-        data = data.decode('utf-8')
+        databytes = bytearray()
+        while True:
+            buffData = conn.recv(4096)
+            if not buffData:
+                break
+            databytes += buffData
+        # print(databytes)
+        data = databytes.decode('utf-8')
         if data != '':
             print('[SERVER] Received data from ' + addr[0] + ':\n\t' + data)
         if data is not None:
@@ -152,10 +168,19 @@ def main_loop():
             conn.send(b'success')
         except:
             pass
-
+    elif request == 'prep_data':
+    # TODO : Make functionality
+        obj_data = readNparseObject(recvdata['object_id'])
+        repr(obj_data)
+        print(obj_data)
+        name = obj_data['title']
+        id = obj_data["id"]
+        print(id)
+        prep_data = Prep_Class(name, id)
+        prep_data.init_dirs()
+        prep_data.img_from_link('new')
     # else:
     # conn.send(b'ERROR wrong request_code')
-
     # try:
     #    start_new_thread(threaded_client, (conn,))
     # except ConnectionResetError:
@@ -164,4 +189,10 @@ def main_loop():
 
 
 while True:
-    main_loop()
+    try:
+        main_loop()
+    except KeyboardInterrupt:
+        tcp_socket.close()
+        break
+
+print('[SERVER] Server is down.')
