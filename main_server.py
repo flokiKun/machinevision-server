@@ -5,8 +5,11 @@ import os
 import platform
 import threading as thread
 # import cv2 as cv
+import time
 from google_images_download import google_images_download
 from prep_data import Prep_Class
+from threading import Thread
+import xml_to_csv
 
 
 class Obj():
@@ -168,17 +171,43 @@ def main_loop():
             conn.send(b'success')
         except:
             pass
-    elif request == 'prep_data':
-    # TODO : Make functionality
+    elif request == 'train_model':
         obj_data = readNparseObject(recvdata['object_id'])
-        repr(obj_data)
-        print(obj_data)
         name = obj_data['title']
-        id = obj_data["id"]
+        id = recvdata['object_id']
+        # repr(obj_data)
+        print(obj_data)
+        # obj_data['status'] = 1
+        Obj(recvdata['object_id'], obj_data).save('artifact_objects')
         print(id)
         prep_data = Prep_Class(name, id)
         prep_data.init_dirs()
         prep_data.img_from_link('new')
+        prep_data.separate_img()
+        prep_data.gen_labelmap_file()
+        prep_data.making_xmls('train')
+        prep_data.making_xmls('test')
+        xml_to_csv.do_this(name)
+        train = '--csv_input=prep_data/{a}/data/train_labels.csv --image_dir=prep_data/{a}/models/model/train --output_path=prep_data/{a}/data/train.record'.format(a=name)
+        eval = '--csv_input=prep_data/{a}/data/test_labels.csv --image_dir=prep_data/{a}/models/model/test --output_path=prep_data/{a}/data/test.record'.format(a=name)
+        os.system('python3 generate_tfrecords.py '+train)
+        os.system('python3 generate_tfrecords.py '+eval)
+        prep_data.gen_pipeline()
+        print('[SERVER] Data is ready')
+        print('[RUN BASH]')
+        # obj_data['status'] = 2
+        # obj_data['lastActType'] = 2
+        # obj_data['lastAct'] = int(round(time.time() * 1000))
+        Obj(recvdata['object_id'], obj_data).save('artifact_objects')
+        conn.send(b'success')
+        # potok = Thread(target=prep_data.gen_train_run_bash_and_run)
+        # potok.start()
+        # potok.join()
+
+    elif request == 'guess':
+        conn.send(b'https://i.imgur.com/bvcPraS.jpg')
+    # elif request == 'stop_train':
+    #     pass
     # else:
     # conn.send(b'ERROR wrong request_code')
     # try:
