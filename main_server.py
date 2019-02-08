@@ -4,10 +4,11 @@ import pathlib
 import os
 import platform
 import threading as thread
-# import cv2 as cv
+import cv2 as cv
 import time
 from google_images_download import google_images_download
-from prep_data import Prep_Class
+from pdd_prep_data import Prep_Class
+from detection_data import Detection
 from threading import Thread
 import xml_to_csv
 
@@ -75,7 +76,7 @@ port = 1337
 print('=============================')
 print('Machine Vision Server ALPHA')
 print('Copyright JaPy Tech.')
-# print('Use OpenCV:{}'.format(cv.__version__))
+print('Use OpenCV:{}'.format(cv.__version__))
 print('Running on {}:{}'.format(host, port))
 print('=============================')
 
@@ -205,7 +206,13 @@ def main_loop():
         # potok.join()
 
     elif request == 'guess':
+        detection = Detection('coco')
+        imgs = detection.detection_on_debug_img()
         conn.send(b'https://i.imgur.com/bvcPraS.jpg')
+        for img in imgs:
+            cv.imshow('res',img)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
     # elif request == 'stop_train':
     #     pass
     # else:
