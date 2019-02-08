@@ -178,11 +178,9 @@ class Prep_Class():
             test_record = 'prep_data/{}/data/test.record'.format(self.object_name)
             values = (labelmap,train_record,labelmap,test_record)
             new_sample = str(sample.read()) % values
-            sample.close()
-
-        with open('prep_data/{}/data/pipleline.config'.format(self.object_name), 'w') as new_file:
-            new_file.write(new_sample)
-            new_file.close()
+            path = 'prep_data/{}/data/pipleline.config'.format(self.object_name)
+            with open(path, 'w+') as new_file:
+                new_file.write(new_sample)
 
 #  python3 generate_tfrecords.py --csv_input=~/projects/machinevision-server/prep_data/knife/train_labels.csv --image_dir=prep_data/knife/models/model/train --output_path=prep_data/knife/train.record
 #
@@ -198,6 +196,7 @@ class Prep_Class():
 #xtc.do_this('chair')
 
 if __name__ == '__main__':
-    object = Prep_Class('jojo','F65XF6X5B7L0YPVR')
+    object = Prep_Class('phone','LR8WWCOVBQMDY6JH')
+    object.gen_pipeline()
     # object.img_from_link('new')
     # object.separate_img()
